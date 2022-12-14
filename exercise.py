@@ -84,39 +84,6 @@ def stepdown(model_order, coefficients, noise_variance):
 def generate_autoregressive_data(coefficients, noise_variance, n_samples):
     model_order = len(coefficients)  # get AR model order
     noise = np.random.randn(n_samples)
-    noise = [0.5377,
-             1.8339,
-             -2.2588,
-             0.8622,
-             0.3188,
-             -1.3077,
-             -0.4336,
-             0.3426,
-             3.5784,
-             2.7694,
-             -1.3499,
-             3.0349,
-             0.7254,
-             -0.0631,
-             0.7147,
-             -0.2050,
-             -0.1241,
-             1.4897,
-             1.4090,
-             1.4172,
-             0.6715,
-             -1.2075,
-             0.7172,
-             1.6302,
-             0.4889,
-             1.0347,
-             0.7269,
-             -0.3034,
-             0.2939,
-             -0.7873,
-             0.8884,
-             -1.1471,
-             ]
     data = np.zeros(n_samples)
     aa, rho, rho0 = get_initial_ar_filter_conditions(coefficients, model_order,
                                                      noise_variance)
@@ -150,14 +117,15 @@ if __name__ == '__main__':
     n_fft = 1024
     frequencies = get_frequencies(n_fft)
     periodogram_psd = get_psd_periodogram(x, N, n_fft)
-    plt.plot(frequencies, periodogram_psd)
+    plt.plot(frequencies, periodogram_psd, label="Standard")
 
-    # plt.plot(frequencies, get_psd_periodogram(x, N//4, n_fft))
-    # plt.show()
+    plt.plot(frequencies, get_psd_periodogram(x, N//4, n_fft), label="Bartlett")
     ar_psd = get_ar_psd(a, sig2u, n_fft)
-    plt.plot(frequencies, ar_psd)
-    # plt.show()
+    plt.plot(frequencies, ar_psd, label="True")
     p = 2
     PSD_cov_dB = PSD_est_AR_cov(x, p, n_fft)
-    plt.plot(frequencies, PSD_cov_dB)
+    plt.plot(frequencies, PSD_cov_dB, label="AR covariant")
+    plt.legend()
+    plt.xlabel("Frequency (arb. units)")
+    plt.ylabel("Intensity (dB)")
     plt.show()
