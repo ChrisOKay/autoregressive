@@ -1,10 +1,3 @@
-""" autoregressive random process.
-An exemplary application is written in the main() function of this module
-References:
-    [Kay 1981] S. Kay, "Efficient generation of colored noise", Proceedings IEEE, vol. 69, pp.480-481, April 1981
-    [Kay 1988] S. Kay, "Modern Spectral Estimation", Theory & Application, Signal Processing Series, 4th Edition, 1988
-"""
-
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.fft import fft, fftshift
@@ -32,8 +25,10 @@ def AR_par_est_cov(data: np.array, ar_model_order: int) -> tuple:
     # compute estimate
     ar_filter_parameters = -np.linalg.inv(H.transpose() @ H) @ H.transpose() @ h
     # compute unbiased estimate of excitation white noise variance
-    noise_variance = (1 / (N - ar_model_order)) * (h + H @ ar_filter_parameters).transpose() @ (h + H @ ar_filter_parameters)
+    noise_variance = (1 / (N - ar_model_order)) * (h + H @ ar_filter_parameters).transpose() @ (
+                h + H @ ar_filter_parameters)
     return ar_filter_parameters, noise_variance
+
 
 
 def get_ar_psd_estimation(data: np.array, ar_model_order: int, n_fft: int, as_dB: bool = True) -> np.array:
@@ -49,8 +44,8 @@ def get_ar_psd_estimation(data: np.array, ar_model_order: int, n_fft: int, as_dB
 
     """
     ahat, noise_variance = AR_par_est_cov(data, ar_model_order)
-    A = np.zeros(n_fft)
-    ar_parameters = np.zeros(n_fft)
+    A = np.zeros(n_fft).astype(complex)
+    ar_parameters = np.zeros(n_fft).astype(complex)
     for i, frequency in enumerate(get_frequencies(n_fft)):
         A[i] = 1
         for k in range(ar_model_order):
@@ -151,21 +146,18 @@ def stepdown(coefficients: np.array, noise_variance: float) -> tuple:
     prediction_error_powers = np.zeros(model_order)
     prediction_error_powers[-1] = noise_variance
     #  Begin step-down
-    for j in range(model_order - 1):
-        k = model_order - j - 1
+    for k in range(model_order - 1, 0, -1):
         denominator = 1 - abs(prediction_coefficients[k, k]) ** 2
-        #  Compute lower order prediction error power (6.52)
         prediction_error_powers[k - 1] = prediction_error_powers[k] / denominator
-        #  Compute lower order prediction coefficients (6.51)
-        k1 = k - 1
-        for i in range(k1):
-            prediction_coefficients[i, k - 1] = (prediction_coefficients[i, k] - prediction_coefficients[k, k] * np.conj(prediction_coefficients[k - i, k])) / denominator
+        for i in range(k - 1):
+            prediction_coefficients[i, k - 1] = (prediction_coefficients[i, k] - prediction_coefficients[
+                k, k] * np.conj(prediction_coefficients[k - i, k])) / denominator
     # Complete step-down by computing zeroth lag of ACF
     acf_zero_lag = prediction_error_powers[0] / (1 - abs(prediction_coefficients[0, 0]) ** 2)
     return prediction_coefficients, prediction_error_powers, acf_zero_lag
 
 
-def generate_autoregressive_data(ar_filter_parameters: np.array, noise_variance: float, n_samples: int) -> np.array:
+def generate_autoregressive_data(ar_filter_parameters: np.array, noise_variance: float, n_samples: int, noise=None) -> np.array:
     """Generate a realization of an AR random process
     given the filter parameters and excitation noise variance.
     The starting transient is eliminated because the initial conditions
@@ -176,12 +168,14 @@ def generate_autoregressive_data(ar_filter_parameters: np.array, noise_variance:
         ar_filter_parameters: array of filter parameters
         noise_variance: variance of excitation noise
         n_samples: number of desired data points
+        noise: for testing only
 
     Returns: real data containing n_samples
 
     """
     model_order = len(ar_filter_parameters)
-    noise = np.random.randn(n_samples)
+    if noise is None:
+        noise = np.random.randn(n_samples)
     data = np.zeros(n_samples)
     aa, rho, rho0 = get_initial_ar_filter_conditions(ar_filter_parameters, noise_variance)
     data[0] = np.sqrt(rho0) * noise[0]
@@ -213,7 +207,7 @@ def get_initial_ar_filter_conditions(ar_filter_parameters: np.array, noise_varia
 
 
 def main():
-    n_samples = 32
+    n_samples = 1024
     ar_filter_parameters = [0, 0.9025]
     noise_variance = 1
     n_fft = 1024
