@@ -5,16 +5,14 @@ from numpy.fft import fft, fftshift
 
 def AR_par_est_cov(x, p):
     N = len(x)
-    for i in range(
-            N - p):  # set up H matrix (observation matrix) for least squares estimate
-        if i == 0:
-            H = np.flipud(x[:p])
-        else:
-            H = np.vstack((H, np.flipud(x[i:i + p])))
-    h = x[p:N];  # set up data vector for least squares estimate
+    H = np.flipud(x[:p])
+    # set up H matrix (observation matrix) for least squares estimate
+    for i in range(1, N - p):
+        H = np.vstack((H, np.flipud(x[i:i + p])))
+    h = x[p:N]  # set up data vector for least squares estimate
     ahat = -np.linalg.inv(H.transpose() @ H) @ H.transpose() @ h  # compute estimate
     # compute unbiased estimate of excitation white noise variance
-    sig2uhat = (1 / (N - p)) * (h + H @ ahat).transpose() @ (h + H @ ahat);
+    sig2uhat = (1 / (N - p)) * (h + H @ ahat).transpose() @ (h + H @ ahat)
     return ahat, sig2uhat
 
 
@@ -111,20 +109,20 @@ if __name__ == '__main__':
     N = 32
     a = [0, 0.9025]
     sig2u = 1
-    x = generate_autoregressive_data(a, sig2u, N)
-    # plt.plot(x, '.-')
-    # plt.show()
     n_fft = 1024
+    p = 2
+
+    x = generate_autoregressive_data(a, sig2u, N)
     frequencies = get_frequencies(n_fft)
     periodogram_psd = get_psd_periodogram(x, N, n_fft)
     plt.plot(frequencies, periodogram_psd, label="Standard")
-
-    plt.plot(frequencies, get_psd_periodogram(x, N//4, n_fft), label="Bartlett")
+    averaged_periodogram_psd = get_psd_periodogram(x, N // 4, n_fft)
     ar_psd = get_ar_psd(a, sig2u, n_fft)
+    psd_cov_dB = PSD_est_AR_cov(x, p, n_fft)
+
+    plt.plot(frequencies, averaged_periodogram_psd, label="Bartlett")
     plt.plot(frequencies, ar_psd, label="True")
-    p = 2
-    PSD_cov_dB = PSD_est_AR_cov(x, p, n_fft)
-    plt.plot(frequencies, PSD_cov_dB, label="AR covariant")
+    plt.plot(frequencies, psd_cov_dB, label="AR covariant")
     plt.legend()
     plt.xlabel("Frequency (arb. units)")
     plt.ylabel("Intensity (dB)")
