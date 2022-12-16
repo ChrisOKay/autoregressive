@@ -1,3 +1,10 @@
+""" autoregressive random process.
+An exemplary application is written in the main() function of this module
+References:
+    [Kay 1981] S. Kay, "Efficient generation of colored noise", Proceedings IEEE, vol. 69, pp.480-481, April 1981
+    [Kay 1988] S. Kay, "Modern Spectral Estimation", Theory & Application, Signal Processing Series, 4th Edition, 1988
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.fft import fft, fftshift
@@ -207,7 +214,7 @@ def get_initial_ar_filter_conditions(ar_filter_parameters: np.array, noise_varia
 
 
 def main():
-    n_samples = 1024
+    n_samples = 32
     ar_filter_parameters = [0, 0.9025]
     noise_variance = 1
     n_fft = 1024
